@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Build a Sentence Game</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+
+        .welcome-screen {
+            text-align: center;
+        }
+
+        .name-input {
+            font-size: 20px;
+            padding: 10px;
+            margin: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        .start-button, .next-level-button {
+            font-size: 20px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .start-button:hover, .next-level-button:hover {
+            background-color: #45a049;
+        }
+
+        .sentence-area {
+            font-size: 24px;
+            margin: 20px;
+            padding: 20px;
+            background-color: #e6f3ff;
+            border-radius: 10px;
+        }
+
+        .drop-zone {
+            display: inline-block;
+            width: 100px;
+            height: 40px;
+            border: 2px dashed #4CAF50;
+            border-radius: 5px;
+            vertical-align: middle;
+        }
+
+        .verbs-container {
+            margin: 20px;
+        }
+
+        .verb {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: move;
+            font-size: 20px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .score, .level {
+            font-size: 24px;
+            color: #4CAF50;
+        }
+
+        .message {
+            font-size: 20px;
+            margin: 10px;
+            min-height: 30px;
+            color: #333;
+        }
+
+        .correct {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .wrong {
+            color: #f44336;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="welcome-screen">
+            <h1>Welcome to Sentence Builder! 🎮</h1>
+            <p>Please enter your name to start:</p>
+            <input type="text" id="playerName" class="name-input" placeholder="Your name">
+            <br>
+            <button class="start-button" onclick="startGame()">Start Game!</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="hidden">
+            <div class="game-info">
+                <div class="level">Level: <span id="currentLevel">1</span>/4</div>
+                <div class="score">Score: <span id="score">0</span></div>
+            </div>
+            <h2 id="playerGreeting"></h2>
+            <div class="sentence-area">
+                <span id="sentenceStart"></span>
+                <div class="drop-zone" id="dropZone"></div>
+                <span id="sentenceEnd"></span>
+            </div>
+            <div class="verbs-container" id="verbsContainer"></div>
+            <div class="message" id="message"></div>
+            <button id="nextLevelBtn" class="next-level-button hidden" onclick="loadNextLevel()">
+                Next Level →
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const levels = [
+            {
+                start: "I",
+                end: "to school",
+                correctVerb: "go",
+                verbs: ["go", "run", "eat", "play"]
+            },
+            {
+                start: "They",
+                end: "in the park",
+                correctVerb: "play",
+                verbs: ["sleep", "play", "write", "jump"]
+            },
+            {
+                start: "She",
+                end: "the book",
+                correctVerb: "reads",
+                verbs: ["write", "reads", "jump", "draw"]
+            },
+            {
+                start: "We",
+                end: "lunch",
+                correctVerb: "eat",
+                verbs: ["drink", "play", "eat", "sleep"]
+            }
+        ];
+
+        let currentLevel = 0;
+        let score = 0;
+        let playerName = "";
+
+        function startGame() {
+            playerName = document.getElementById("playerName").value.trim();
+            if (!playerName) {
+                alert("Please enter your name!");
+                return;
+            }
+
+            document.getElementById("welcomeScreen").classList.add("hidden");
+            document.getElementById("gameScreen").classList.remove("hidden");
+            document.getElementById("playerGreeting").textContent = `Good luck, ${playerName}! 🌟`;
+            
+            loadLevel(currentLevel);
+        }
+
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex];
+            document.getElementById("currentLevel").textContent = levelIndex + 1;
+            document.getElementById("sentenceStart").textContent = level.start + " ";
+            document.getElementById("sentenceEnd").textContent = " " + level.end;
+            
+            // Clear drop zone
+            const dropZone = document.getElementById("dropZone");
+            dropZone.textContent = "";
+            
+            // Reset message
+            document.getElementById("message").textContent = "";
+            document.getElementById("message").className = "message";
+            
+            // Hide next level button
+            document.getElementById("nextLevelBtn").classList.add("hidden");
+            
+            // Create verbs
+            const verbsContainer = document.getElementById("verbsContainer");
+            verbsContainer.innerHTML = "";
+            level.verbs.forEach(verb => {
+                const verbElement = document.createElement("div");
+                verbElement.className = "verb";
+                verbElement.draggable = true;
+                verbElement.textContent = verb;
+                verbElement.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text/plain", verb);
+                });
+                verbsContainer.appendChild(verbElement);
+            });
+        }
+
+        function loadNextLevel() {
+            currentLevel++;
+            if (currentLevel < levels.length) {
+                loadLevel(currentLevel);
+            } else {
+                // Game completed
+                document.getElementById("gameScreen").innerHTML = `
+                    <h1>🎉 Congratulations, ${playerName}! 🎉</h1>
+                    <p>You completed all levels with a score of ${score}!</p>
+                    <button class="start-button" onclick="location.reload()">Play Again</button>
+                `;
+            }
+        }
+
+        // Setup drop zone
+        document.getElementById("dropZone").addEventListener("dragover", (e) => {
+            e.preventDefault();
+        });
+
+        document.getElementById("dropZone").addEventListener("drop", (e) => {
+            e.preventDefault();
+            const verb = e.dataTransfer.getData("text/plain");
+            e.target.textContent = verb;
+            
+            checkAnswer(verb);
+        });
+
+        function checkAnswer(verb) {
+            const messageEl = document.getElementById("message");
+            const scoreEl = document.getElementById("score");
+            const nextLevelBtn = document.getElementById("nextLevelBtn");
+            
+            if (verb === levels[currentLevel].correctVerb) {
+                messageEl.textContent = "✨ Correct! ✨";
+                messageEl.className = "message correct";
+                score += 10;
+                scoreEl.textContent = score;
+                nextLevelBtn.classList.remove("hidden");
+            } else {
+                messageEl.textContent = "🤔 Try again!";
+                messageEl.className = "message wrong";
+                setTimeout(() => {
+                    document.getElementById("dropZone").textContent = "";
+                    messageEl.textContent = "";
+                }, 1500);
+            }
+        }
+    </script>
+</body>
+</html>
